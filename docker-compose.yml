@@ -1,0 +1,16 @@
+services:
+  discord-bot:
+    build: .
+    image: discord-music-bot:latest
+    container_name: discord-music-bot
+    working_dir: /app
+    volumes:
+      - /home/hifdillah/discord-music:/app
+    user: root
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - FFMPEG_PATH=/usr/bin/ffmpeg
+      - YTDLP_DIR=/usr/local/bin
+      - YTDLP_FILENAME=yt-dlp
