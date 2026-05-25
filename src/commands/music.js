@@ -3,6 +3,47 @@
  * Mendukung: play, skip, stop, queue, pause, resume, volume, np, help, loop, shuffle
  */
 
+function normalizePlayQuery(query) {
+  const trimmed = query.trim().replace(/[,.\s]+$/g, "");
+
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.replace(/^www\./, "");
+    const isYoutubeWatch = ["youtube.com", "m.youtube.com", "music.youtube.com"].includes(host) && url.pathname === "/watch";
+
+    // YouTube radio/playlist params can make yt-dlp return a playlist-like payload that
+    // breaks DisTube's stream handling. For a watch URL, play the video ID directly.
+    if (isYoutubeWatch && url.searchParams.has("v")) {
+      return `https://www.youtube.com/watch?v=${url.searchParams.get("v")}`;
+    }
+  } catch {
+    // Not a URL; keep text search intact.
+  }
+
+  return trimmed;
+}
+
+async function playWithQueueRecovery(distube, voiceChannel, query, options) {
+  const guildId = voiceChannel.guild.id;
+  const clearStoppedQueue = () => {
+    const queue = distube.getQueue(guildId);
+    if (queue?.stopped) {
+      distube.queues.remove(guildId);
+    }
+  };
+
+  clearStoppedQueue();
+  try {
+    await distube.play(voiceChannel, query, options);
+  } catch (error) {
+    if (error?.errorCode !== "QUEUE_STOPPED") {
+      throw error;
+    }
+    distube.queues.remove(guildId);
+    await distube.play(voiceChannel, query, options);
+  }
+}
+
 export async function handleMusicCommands(message, args, command) {
   const { distube } = message.client;
   const voiceChannel = message.member?.voice?.channel;
@@ -55,7 +96,7 @@ export async function handleMusicCommands(message, args, command) {
       if (!voiceChannel) {
         return message.reply("❌ Kamu harus berada di voice channel untuk memutar musik!");
       }
-      let query = args.join(" ");
+      let query = normalizePlayQuery(args.join(" "));
       if (!query) {
         return message.reply("❌ Gunakan: `!play <url atau nama lagu>`");
       }
@@ -64,7 +105,7 @@ export async function handleMusicCommands(message, args, command) {
       if (!isUrl) {
         query = `ytsearch1:${query}`;
       }
-      await distube.play(voiceChannel, query, {
+      await playWithQueueRecovery(distube, voiceChannel, query, {
         member: message.member,
         textChannel: message.channel,
       });
@@ -82,7 +123,7 @@ export async function handleMusicCommands(message, args, command) {
     case "stop": {
       const queue = distube.getQueue(message);
       if (!queue) return message.reply("❌ Tidak ada antrean!");
-      distube.stop(message);
+      await distube.stop(message);
       await message.reply("⏹️ Musik dihentikan.");
       break;
     }
