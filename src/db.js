@@ -23,13 +23,42 @@ export function savePlaylist(userId, name, songs) {
   const stmt = db.prepare(
     "INSERT OR REPLACE INTO playlists (user_id, name, songs) VALUES (?, ?, ?)"
   );
-  const songsJson = JSON.stringify(songs.map((s) => ({ url: s.url, name: s.name })));
-  stmt.run(userId, name.toLowerCase(), songsJson);
+  const formatted = songs.map((s) => ({
+    url: s.url || s.webpage_url || "",
+    name: s.name || s.title || "Unknown Track",
+    duration: s.formattedDuration || s.duration || "",
+  }));
+  stmt.run(userId, name.toLowerCase().trim(), JSON.stringify(formatted));
+}
+
+export function appendToPlaylist(userId, name, newSongs) {
+  const existing = getPlaylist(userId, name) || [];
+  const toAdd = (Array.isArray(newSongs) ? newSongs : [newSongs]).map((s) => ({
+    url: s.url || s.webpage_url || "",
+    name: s.name || s.title || "Unknown Track",
+    duration: s.formattedDuration || s.duration || "",
+  }));
+
+  // Avoid exact duplicates if url matches
+  const merged = [...existing];
+  for (const item of toAdd) {
+    if (!item.url) continue;
+    const exists = merged.some((m) => m.url === item.url);
+    if (!exists) {
+      merged.push(item);
+    }
+  }
+
+  const stmt = db.prepare(
+    "INSERT OR REPLACE INTO playlists (user_id, name, songs) VALUES (?, ?, ?)"
+  );
+  stmt.run(userId, name.toLowerCase().trim(), JSON.stringify(merged));
+  return merged.length;
 }
 
 export function getPlaylist(userId, name) {
   const stmt = db.prepare("SELECT songs FROM playlists WHERE user_id = ? AND name = ?");
-  const row = stmt.get(userId, name.toLowerCase());
+  const row = stmt.get(userId, name.toLowerCase().trim());
   return row ? JSON.parse(row.songs) : null;
 }
 
@@ -42,6 +71,6 @@ export function listPlaylists(userId) {
 
 export function deletePlaylist(userId, name) {
   const stmt = db.prepare("DELETE FROM playlists WHERE user_id = ? AND name = ?");
-  const result = stmt.run(userId, name.toLowerCase());
+  const result = stmt.run(userId, name.toLowerCase().trim());
   return result.changes > 0;
 }
