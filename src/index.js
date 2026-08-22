@@ -6,7 +6,7 @@ import { config } from "./config.js";
 import { handleMusicCommands } from "./commands/music.js";
 import { MusicPanelManager } from "./panel.js";
 
-// Custom YtDlpPlugin with search capability and reliable audio extraction format
+// Custom YtDlpPlugin with search capability, reliable client & stream recovery
 export class SafeYtDlpPlugin extends YtDlpPlugin {
   type = "extractor";
 
@@ -20,14 +20,15 @@ export class SafeYtDlpPlugin extends YtDlpPlugin {
     if (!song.url) {
       throw new Error("Cannot get stream url from invalid song.");
     }
-    // YouTube stream extraction with format fallback
+    // YouTube stream extraction with format fallback and stable player clients
     const info = await json(song.url, {
       dumpSingleJson: true,
       noWarnings: true,
       preferFreeFormats: true,
       skipDownload: true,
       simulate: true,
-      format: "ba/ba*",
+      format: "ba/ba*/b",
+      extractorArgs: "youtube:player_client=android,web",
     }).catch((e) => {
       throw new Error(`${e.stderr || e}`);
     });
@@ -52,7 +53,21 @@ const distube = new DisTube(client, {
   emitAddSongWhenCreatingQueue: false,
   emitAddListWhenCreatingQueue: false,
   plugins: [new SpotifyPlugin(), new SafeYtDlpPlugin({ update: false })],
-  ffmpeg: { path: config.ffmpegPath },
+  ffmpeg: {
+    path: config.ffmpegPath,
+    args: {
+      global: {},
+      input: {
+        reconnect: 1,
+        reconnect_streamed: 1,
+        reconnect_delay_max: 5,
+        reconnect_at_eof: 1,
+        reconnect_on_network_error: 1,
+        reconnect_on_http_error: "4xx,5xx",
+      },
+      output: {},
+    },
+  },
 });
 
 const MUSIC_CHANNEL_ID = "1485833926302892136";
