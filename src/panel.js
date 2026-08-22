@@ -300,7 +300,7 @@ export class MusicPanelManager {
 
       const row = new ActionRowBuilder().addComponents(input);
       modal.addComponents(row);
-      return interaction.showModal(modal);
+      return interaction.showModal(modal).catch(() => {});
     }
 
     // Modal Create Playlist
@@ -327,7 +327,7 @@ export class MusicPanelManager {
         new ActionRowBuilder().addComponents(nameInput),
         new ActionRowBuilder().addComponents(songsInput)
       );
-      return interaction.showModal(modal);
+      return interaction.showModal(modal).catch(() => {});
     }
 
     // Assign Currently Playing / Current Queue to Playlist
@@ -336,7 +336,7 @@ export class MusicPanelManager {
         return interaction.reply({
           content: "❌ Tidak ada lagu yang sedang diputar!",
           flags: [MessageFlags.Ephemeral],
-        });
+        }).catch(() => {});
       }
 
       const playlists = listPlaylists(member.id);
@@ -344,7 +344,7 @@ export class MusicPanelManager {
         return interaction.reply({
           content: "❌ Kamu belum memiliki playlist. Buat playlist terlebih dahulu via tombol `➕ Buat Playlist`!",
           flags: [MessageFlags.Ephemeral],
-        });
+        }).catch(() => {});
       }
 
       const options = playlists.slice(0, 25).map((p) => {
@@ -369,7 +369,7 @@ export class MusicPanelManager {
         content: `📌 **Assign Lagu ke Playlist**\nTrek aktif: **${currSong.name}**\nPilih playlist tujuan di bawah:`,
         components: [row],
         flags: [MessageFlags.Ephemeral],
-      });
+      }).catch(() => {});
     }
 
     if (customId === "panel_my_playlists") {
@@ -378,7 +378,7 @@ export class MusicPanelManager {
         return interaction.reply({
           content: "❌ Kamu belum memiliki playlist tersimpan! Buat menggunakan tombol `➕ Buat Playlist`.",
           flags: [MessageFlags.Ephemeral],
-        });
+        }).catch(() => {});
       }
 
       const options = playlists.slice(0, 25).map((p) => {
@@ -404,7 +404,7 @@ export class MusicPanelManager {
         content: "🗂️ **Koleksi Playlist Kamu:**",
         components: [row],
         flags: [MessageFlags.Ephemeral],
-      });
+      }).catch(() => {});
     }
 
     // Controls that require user to be in voice channel
@@ -412,85 +412,85 @@ export class MusicPanelManager {
       return interaction.reply({
         content: "❌ Kamu harus bergabung di voice channel terlebih dahulu!",
         flags: [MessageFlags.Ephemeral],
-      });
+      }).catch(() => {});
     }
 
     switch (customId) {
       case "panel_play_pause": {
-        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik!", flags: [MessageFlags.Ephemeral] });
+        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik!", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         if (queue.paused) {
           this.client.distube.resume(guild.id);
-          await interaction.reply({ content: "▶️ Pemutaran dilanjutkan.", flags: [MessageFlags.Ephemeral] });
+          await interaction.reply({ content: "▶️ Pemutaran dilanjutkan.", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         } else {
           this.client.distube.pause(guild.id);
-          await interaction.reply({ content: "⏸️ Pemutaran dijeda.", flags: [MessageFlags.Ephemeral] });
+          await interaction.reply({ content: "⏸️ Pemutaran dijeda.", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         }
         this.scheduleRefresh(guild);
         break;
       }
 
       case "panel_skip": {
-        if (!queue) return interaction.reply({ content: "❌ Tidak ada lagu di antrean!", flags: [MessageFlags.Ephemeral] });
+        if (!queue) return interaction.reply({ content: "❌ Tidak ada lagu di antrean!", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         try {
           await this.client.distube.skip(guild.id);
-          await interaction.reply({ content: "⏭️ Melewati ke lagu berikutnya.", flags: [MessageFlags.Ephemeral] });
+          await interaction.reply({ content: "⏭️ Melewati ke lagu berikutnya.", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         } catch (e) {
-          await interaction.reply({ content: "⏹️ Antrean lagu telah selesai.", flags: [MessageFlags.Ephemeral] });
+          await interaction.reply({ content: "⏹️ Antrean lagu telah selesai.", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         }
         this.scheduleRefresh(guild);
         break;
       }
 
       case "panel_stop": {
-        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik yang berjalan!", flags: [MessageFlags.Ephemeral] });
+        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik yang berjalan!", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         await this.client.distube.stop(guild.id);
-        await interaction.reply({ content: "🛑 Musik dihentikan.", flags: [MessageFlags.Ephemeral] });
+        await interaction.reply({ content: "🛑 Musik dihentikan.", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         this.scheduleRefresh(guild);
         break;
       }
 
       case "panel_vol_down": {
-        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik yang berjalan!", flags: [MessageFlags.Ephemeral] });
+        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik yang berjalan!", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         const newVol = Math.max(0, queue.volume - 10);
         this.client.distube.setVolume(guild.id, newVol);
-        await interaction.reply({ content: `🔉 Volume disetel ke **${newVol}%**`, flags: [MessageFlags.Ephemeral] });
+        await interaction.reply({ content: `🔉 Volume disetel ke **${newVol}%**`, flags: [MessageFlags.Ephemeral] }).catch(() => {});
         this.scheduleRefresh(guild);
         break;
       }
 
       case "panel_vol_up": {
-        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik yang berjalan!", flags: [MessageFlags.Ephemeral] });
+        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik yang berjalan!", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         const newVol = Math.min(100, queue.volume + 10);
         this.client.distube.setVolume(guild.id, newVol);
-        await interaction.reply({ content: `🔊 Volume disetel ke **${newVol}%**`, flags: [MessageFlags.Ephemeral] });
+        await interaction.reply({ content: `🔊 Volume disetel ke **${newVol}%**`, flags: [MessageFlags.Ephemeral] }).catch(() => {});
         this.scheduleRefresh(guild);
         break;
       }
 
       case "panel_repeat": {
-        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik yang berjalan!", flags: [MessageFlags.Ephemeral] });
+        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik yang berjalan!", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         const nextMode = (queue.repeatMode + 1) % 3;
         this.client.distube.setRepeatMode(guild.id, nextMode);
         const modeNames = { 0: "Mati (OFF)", 1: "Ulangi Trek Ini (SINGLE)", 2: "Ulangi Semua Antrian (ALL)" };
-        await interaction.reply({ content: `🔄 Mode perulangan: **${modeNames[nextMode]}**`, flags: [MessageFlags.Ephemeral] });
+        await interaction.reply({ content: `🔄 Mode perulangan: **${modeNames[nextMode]}**`, flags: [MessageFlags.Ephemeral] }).catch(() => {});
         this.scheduleRefresh(guild);
         break;
       }
 
       case "panel_shuffle": {
         if (!queue || queue.songs.length < 3) {
-          return interaction.reply({ content: "❌ Perlu minimal 3 lagu di antrean untuk mengacak urutan!", flags: [MessageFlags.Ephemeral] });
+          return interaction.reply({ content: "❌ Perlu minimal 3 lagu di antrean untuk mengacak urutan!", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         }
         this.client.distube.shuffle(guild.id);
-        await interaction.reply({ content: "🎲 Urutan antrean berhasil diacak!", flags: [MessageFlags.Ephemeral] });
+        await interaction.reply({ content: "🎲 Urutan antrean berhasil diacak!", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         this.scheduleRefresh(guild);
         break;
       }
 
       case "panel_autoplay": {
-        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik yang berjalan!", flags: [MessageFlags.Ephemeral] });
+        if (!queue) return interaction.reply({ content: "❌ Tidak ada musik yang berjalan!", flags: [MessageFlags.Ephemeral] }).catch(() => {});
         const auto = this.client.distube.toggleAutoplay(guild.id);
-        await interaction.reply({ content: `📡 Radio Autoplay: **${auto ? "ON" : "OFF"}**`, flags: [MessageFlags.Ephemeral] });
+        await interaction.reply({ content: `📡 Radio Autoplay: **${auto ? "ON" : "OFF"}**`, flags: [MessageFlags.Ephemeral] }).catch(() => {});
         this.scheduleRefresh(guild);
         break;
       }
@@ -501,16 +501,16 @@ export class MusicPanelManager {
     if (interaction.customId === "modal_search_song") {
       const query = interaction.fields.getTextInputValue("search_query").trim();
       if (!query) {
-        return interaction.reply({ content: "❌ Kata kunci pencarian tidak boleh kosong!", flags: [MessageFlags.Ephemeral] });
+        return interaction.reply({ content: "❌ Kata kunci pencarian tidak boleh kosong!", flags: [MessageFlags.Ephemeral] }).catch(() => {});
       }
 
-      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => {});
 
       // Direct link check
       if (query.startsWith("http://") || query.startsWith("https://")) {
         const voiceChannel = interaction.member?.voice?.channel;
         if (!voiceChannel) {
-          return interaction.editReply("❌ Kamu harus berada di voice channel untuk memutar lagu!");
+          return interaction.editReply("❌ Kamu harus berada di voice channel untuk memutar lagu!").catch(() => {});
         }
 
         try {
@@ -518,10 +518,10 @@ export class MusicPanelManager {
             member: interaction.member,
             textChannel: interaction.channel,
           });
-          await interaction.editReply(`⚡ Berhasil memuat tautan: **${query}**`);
+          await interaction.editReply(`⚡ Berhasil memuat tautan: **${query}**`).catch(() => {});
           this.scheduleRefresh(interaction.guild);
         } catch (err) {
-          await interaction.editReply(`❌ Gagal memutar link: ${err.message}`);
+          await interaction.editReply(`❌ Gagal memutar link: ${err.message}`).catch(() => {});
         }
         return;
       }
@@ -532,7 +532,7 @@ export class MusicPanelManager {
         const songs = results?.songs || [];
 
         if (!songs.length) {
-          return interaction.editReply(`❌ Tidak ditemukan hasil untuk: \`${query}\``);
+          return interaction.editReply(`❌ Tidak ditemukan hasil untuk: \`${query}\``).catch(() => {});
         }
 
         const searchKey = `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
@@ -559,17 +559,17 @@ export class MusicPanelManager {
         await interaction.editReply({
           content: `🔎 **Hasil Pencarian:** \`${query}\`\nPilih salah satu trek di bawah:`,
           components: [row],
-        });
+        }).catch(() => {});
       } catch (err) {
         console.error("Search error:", err);
-        await interaction.editReply(`❌ Gagal melakukan pencarian: ${err.message}`);
+        await interaction.editReply(`❌ Gagal melakukan pencarian: ${err.message}`).catch(() => {});
       }
     } else if (interaction.customId === "modal_create_playlist") {
       const name = interaction.fields.getTextInputValue("playlist_name").trim();
       const songsRaw = interaction.fields.getTextInputValue("playlist_songs")?.trim() || "";
 
       if (!name) {
-        return interaction.reply({ content: "❌ Nama playlist tidak boleh kosong!", flags: [MessageFlags.Ephemeral] });
+        return interaction.reply({ content: "❌ Nama playlist tidak boleh kosong!", flags: [MessageFlags.Ephemeral] }).catch(() => {});
       }
 
       const lines = songsRaw.split("\n").map(l => l.trim()).filter(Boolean);
@@ -591,7 +591,7 @@ export class MusicPanelManager {
       return interaction.reply({
         content: `✅ Playlist **${name}** berhasil dibuat ${countMsg}`,
         flags: [MessageFlags.Ephemeral],
-      });
+      }).catch(() => {});
     }
   }
 
@@ -604,7 +604,7 @@ export class MusicPanelManager {
         return interaction.reply({
           content: "❌ Kamu harus berada di voice channel untuk memutar lagu!",
           flags: [MessageFlags.Ephemeral],
-        });
+        }).catch(() => {});
       }
 
       const selectedValue = values[0];
@@ -649,7 +649,7 @@ export class MusicPanelManager {
         return interaction.reply({
           content: "❌ Kamu harus berada di voice channel untuk memutar playlist!",
           flags: [MessageFlags.Ephemeral],
-        });
+        }).catch(() => {});
       }
 
       const playlistName = values[0].replace("playlist_", "");
@@ -659,7 +659,7 @@ export class MusicPanelManager {
         return interaction.reply({
           content: `❌ Playlist **${playlistName}** tidak memiliki lagu atau tidak ditemukan.`,
           flags: [MessageFlags.Ephemeral],
-        });
+        }).catch(() => {});
       }
 
       const songListPreview = songs
@@ -671,7 +671,7 @@ export class MusicPanelManager {
       await interaction.reply({
         content: `🗂️ **Memuat Playlist: \`${playlistName}\` (${songs.length} Lagu)**\n\n${songListPreview}${extra}`,
         flags: [MessageFlags.Ephemeral],
-      });
+      }).catch(() => {});
 
       try {
         for (const s of songs) {
@@ -695,7 +695,7 @@ export class MusicPanelManager {
         return interaction.reply({
           content: "❌ Tidak ada lagu yang aktif untuk dimasukkan ke playlist!",
           flags: [MessageFlags.Ephemeral],
-        });
+        }).catch(() => {});
       }
 
       const targetPlaylist = values[0].replace("assign_to_", "");
@@ -705,7 +705,7 @@ export class MusicPanelManager {
       return interaction.reply({
         content: `✅ Lagu **${currSong.name}** berhasil dimasukkan ke playlist **${targetPlaylist}**! (Total sekarang: ${newTotal} lagu)`,
         flags: [MessageFlags.Ephemeral],
-      });
+      }).catch(() => {});
     }
   }
 
